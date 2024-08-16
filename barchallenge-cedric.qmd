@@ -1,0 +1,110 @@
+---
+title: "bar-challenge"
+format: html
+editor: visual
+---
+
+## [bar-challenge from Cedric Scherer](https://twitter.com/CedScherer/status/1717559416449310947)
+
+```{r}
+library(tidyverse)
+library(scales)
+```
+
+```{r}
+ggplot2::diamonds |> 
+  count(cut) |> 
+  mutate(cut = fct_reorder(cut, n)) |> 
+  mutate(proportion = n/sum(n), 
+         percentage = scales::percent(proportion)) |> 
+  ggplot(aes( y = cut, x = proportion)) + 
+  geom_col(fill = "red4", width = 0.2) +
+  geom_text(aes(label = percentage), hjust = 1, color = 'white', fontface = 'bold',size = 4) + 
+  geom_text(aes(label = cut, x = 0), vjust = -1, hjust = 0, size = 5) +
+  theme(axis.text.y = element_blank())
+  
+```
+
+```{r}
+ggplot(diamonds, aes(y = cut, x = after_stat(count / sum(count)))) +
+  geom_bar(size = 0.3) +
+  geom_text(
+    stat = "count",
+    aes(
+      label = stage("", after_scale = scales::percent(x)),
+      hjust = after_scale(ifelse(x > 0.05, 1.2, -0.2))
+    )
+  ) + 
+    geom_text(
+    data = ~ subset(.x, !duplicated(cut)),
+    aes(x = 0, label = cut), nudge_y = 0.5, hjust = 0
+  )
+```
+
+```{r}
+ggplot(diamonds, aes(x = after_stat(count), y = as.numeric(cut))) +
+  geom_bar(aes(y = as.numeric(cut) - 0.2), width = 0.5) +
+  geom_text(aes(x = 10, y = as.numeric(cut) + 0.2, group = cut, label = cut), hjust = 0)
+```
+
+```{r}
+# chatgpt based response
+df <- data.frame(
+  category = c('Ideal', 'Premium', 'Very Good', 'Good', 'Fair'), 
+  value = c( 40.0, 25.6, 22.4, 9.1, 3.0)
+)
+
+df |> 
+  mutate(category = fct_reorder(category, value)) |> 
+  ggplot(aes(x = category, y = value)) +
+   geom_bar(stat = 'identity', fill = 'green') + 
+  coord_flip() + 
+  geom_text(aes(label = paste0(value, '%')), hjust = 1.5) + 
+  labs( y = "Proportion", x = NULL) + 
+  theme_minimal()
+```
+
+```{r}
+diamonds |> 
+  janitor::tabyl(cut) |> 
+  mutate(cut = factor(cut, levels = c('Ideal', 'Premium', 'Very Good', 'Good', 'Fair'))) |> 
+  mutate(cut = fct_reorder(cut, percent)) |> 
+  ggplot(aes(x = percent, y = cut)) + 
+  geom_col(width = 0.2, fill= 'red4') + 
+  geom_text(aes(x = 0, y = cut, label = cut), 
+            vjust = -1, 
+            
+            hjust = 0) +
+  theme_minimal() + 
+  theme(axis.text.y = element_blank(), 
+        panel.grid = element_blank()) + 
+  labs( x = 'Proportion', 
+        y = NULL) + 
+  scale_fill_discrete( values = c('green', 'grey50', 'grey50', 'grey50','grey50'), aesthetics = 'fill')
+  
+```
+
+```{r}
+dev.new(width = 13/2.54, height = 9/2.54)
+
+diamonds |> 
+  count(cut) |> 
+  mutate(pct = round(n/sum(n), 1)) |> 
+  arrange(-pct) |> 
+  mutate(cut = factor(cut, levels = rev(cut))) |> 
+  ggplot(aes(y = cut, x = pct)) + 
+  geom_col(aes(fill = I(if_else(pct == max(pct), "red4", "grey50"))), 
+           width = 0.5) + 
+  geom_text(
+    fontface = 'plain', 
+    size = 3.5, 
+    aes(label = sprintf("%1.1f", pct) |> paste0("%"), 
+        hjust= ifelse(pct <5, -0.1, 1.1), 
+        color = I(ifelse(pct < 5, 'black', 'white')))
+  ) 
+  
+```
+
+```{r}
+levels(diamonds$cut)
+```
